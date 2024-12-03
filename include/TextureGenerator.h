@@ -17,7 +17,7 @@ public:
     
     bool AddTextureTile(const char* filename, int lowHeight, int optimalHeight);
 
-    unsigned int GenerateTexture(const unsigned char* heightData, int size);
+    unsigned int GenerateTexture(const unsigned char* heightData, int size, int targetSize);
 
 private:
     struct TextureTile {

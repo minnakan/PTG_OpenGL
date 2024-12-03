@@ -64,21 +64,24 @@ void TextureGenerator::BlendPixel(unsigned char* finalColor, const unsigned char
     }
 }
 
-unsigned int TextureGenerator::GenerateTexture(const unsigned char* heightData, int size) {
-
+unsigned int TextureGenerator::GenerateTexture(const unsigned char* heightData, int size, int targetSize) {
     if (m_textureTiles.empty() || !heightData) {
         std::cerr << "Invalid input parameters for texture generation" << std::endl;
         return 0;
     }
 
     // Allocate memory for final texture
-    std::vector<unsigned char> finalTexture(size * size * 4, 0);
+    std::vector<unsigned char> finalTexture(targetSize * targetSize * 4, 0);
 
     // For each pixel in the final texture
-    for (int y = 0; y < size; y++) {
-        for (int x = 0; x < size; x++) {
-            int heightValue = heightData[y * size + x];
-            unsigned char* finalPixel = &finalTexture[(y * size + x) * 4];
+    for (int y = 0; y < targetSize; y++) {
+        for (int x = 0; x < targetSize; x++) {
+            // Map coordinates to heightmap resolution
+            int heightMapX = x * size / targetSize;
+            int heightMapY = y * size / targetSize;
+
+            int heightValue = heightData[heightMapY * size + heightMapX];
+            unsigned char* finalPixel = &finalTexture[(y * targetSize + x) * 4];
 
             // First calculate total blend factor to normalize later
             float totalBlend = 0.0f;
@@ -94,29 +97,50 @@ unsigned int TextureGenerator::GenerateTexture(const unsigned char* heightData, 
             // Clear the pixel
             std::fill(finalPixel, finalPixel + 4, 0);
 
-            // If we have any blending to do
+            // Blend all texture tiles based on height with normalization
             if (totalBlend > 0.0f) {
-                // Blend all texture tiles based on height with normalization
                 for (size_t i = 0; i < m_textureTiles.size(); i++) {
+                    const auto& tile = m_textureTiles[i];
                     float normalizedBlend = blendFactors[i] / totalBlend;
-                    if (normalizedBlend > 0.0f) {
-                        // Calculate texture coordinates
-                        int texX = (x * m_textureTiles[i].width) / size;
-                        int texY = (y * m_textureTiles[i].height) / size;
-                        const unsigned char* tilePixel = &m_textureTiles[i].data[(texY * m_textureTiles[i].width + texX) * 4];
 
-                        // Blend each color component
+                    if (normalizedBlend > 0.0f) {
+                        // Calculate texture coordinates with upscaling
+                        float texX = static_cast<float>(x) * tile.width / targetSize;
+                        float texY = static_cast<float>(y) * tile.height / targetSize;
+
+                        // Perform bilinear interpolation
+                        int x0 = static_cast<int>(texX);
+                        int y0 = static_cast<int>(texY);
+                        int x1 = std::min(x0 + 1, tile.width - 1);
+                        int y1 = std::min(y0 + 1, tile.height - 1);
+
+                        float dx = texX - x0;
+                        float dy = texY - y0;
+
+                        const unsigned char* p00 = &tile.data[(y0 * tile.width + x0) * 4];
+                        const unsigned char* p10 = &tile.data[(y0 * tile.width + x1) * 4];
+                        const unsigned char* p01 = &tile.data[(y1 * tile.width + x0) * 4];
+                        const unsigned char* p11 = &tile.data[(y1 * tile.width + x1) * 4];
+
+                        unsigned char interpolatedPixel[4];
                         for (int c = 0; c < 4; c++) {
-                            finalPixel[c] += static_cast<unsigned char>(tilePixel[c] * normalizedBlend);
+                            float v0 = p00[c] * (1 - dx) + p10[c] * dx;
+                            float v1 = p01[c] * (1 - dx) + p11[c] * dx;
+                            interpolatedPixel[c] = static_cast<unsigned char>(v0 * (1 - dy) + v1 * dy);
+                        }
+
+                        // Blend interpolated color into final pixel
+                        for (int c = 0; c < 4; c++) {
+                            finalPixel[c] += static_cast<unsigned char>(interpolatedPixel[c] * normalizedBlend);
                         }
                     }
                 }
             }
             else {
-                // If no blend factors, use a default color or the lowest terrain texture
+                // Default color if no blend factors are valid
                 const auto& defaultTile = m_textureTiles[0];
-                int texX = (x * defaultTile.width) / size;
-                int texY = (y * defaultTile.height) / size;
+                int texX = (x * defaultTile.width) / targetSize;
+                int texY = (y * defaultTile.height) / targetSize;
                 const unsigned char* defaultPixel = &defaultTile.data[(texY * defaultTile.width + texX) * 4];
                 std::copy(defaultPixel, defaultPixel + 4, finalPixel);
             }
@@ -133,7 +157,7 @@ unsigned int TextureGenerator::GenerateTexture(const unsigned char* heightData, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, finalTexture.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, targetSize, targetSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, finalTexture.data());
     glGenerateMipmap(GL_TEXTURE_2D);
 
     return textureID;

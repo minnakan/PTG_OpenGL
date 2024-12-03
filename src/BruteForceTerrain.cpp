@@ -172,7 +172,7 @@ void BruteForceTerrain::GenerateTerrainFractal_FF(float iMinDelta, float iMaxDel
     if (textureID) {
         glDeleteTextures(1, &textureID);
     }
-    textureID = m_textureGenerator.GenerateTexture(m_heightData.m_pucData, m_iSize);
+    textureID = m_textureGenerator.GenerateTexture(m_heightData.m_pucData, m_iSize, 256);
 
     SetupMesh();
 }
@@ -328,7 +328,7 @@ void BruteForceTerrain::GenerateTerrainFractal_MPD(float initialHeight, float ro
     }
     std::cout << "Size = " << m_iSize<<std::endl;
 
-    textureID = m_textureGenerator.GenerateTexture(m_heightData.m_pucData, m_iSize);
+    textureID = m_textureGenerator.GenerateTexture(m_heightData.m_pucData, m_iSize, 256);
 
     SetupMesh();
 }
