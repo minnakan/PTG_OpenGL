@@ -101,3 +101,33 @@ bool Terrain::LoadTexture(const char* filePath)
     glBindTexture(GL_TEXTURE_2D, 0);
     return true;
 }
+
+
+bool Terrain::LoadDetailMap(const char* filePath) {
+    glGenTextures(1, &detailMapID);
+    glBindTexture(GL_TEXTURE_2D, detailMapID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(filePath, &width, &height, &nrChannels, 1);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        stbi_image_free(data);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return true;
+    }
+    std::cerr << "Failed to load detail map: " << filePath << std::endl;
+    return false;
+}
+
+void Terrain::UnloadDetailMap() {
+    if (detailMapID) {
+        glDeleteTextures(1, &detailMapID);
+        detailMapID = 0;
+    }
+}

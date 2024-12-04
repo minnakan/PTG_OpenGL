@@ -2,6 +2,7 @@
 #define TERRAIN_H
 
 #include <glad/glad.h>
+#include "Shader.h"
 
 struct SHEIGHT_DATA
 {
@@ -13,13 +14,16 @@ class Terrain
 {
 protected:
 	GLuint textureID;
+	GLuint detailMapID;
 
 public:
 	SHEIGHT_DATA m_heightData;
 	float m_fHeightScale;
 	int m_iSize;
 
-	
+	Shader *shaderProgramme;
+
+	float repeatDetailMap;
 
 	virtual void Render(void) = 0;
 
@@ -29,6 +33,8 @@ public:
 
 	bool LoadTexture(const char* filePath);
 
+	bool LoadDetailMap(const char* filePath);
+	void UnloadDetailMap();
 
 	inline void SetHeightScale(float fScale)
 	{

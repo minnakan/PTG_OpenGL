@@ -24,11 +24,29 @@ void BruteForceTerrain::Render(void)
     if (!m_heightData.m_pucData) {
         return;
     }
+    
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureID);
+    shaderProgramme->setInt("terrainTexture", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, detailMapID);
+    shaderProgramme->setInt("detailTexture", 1);
+
+    shaderProgramme->setFloat("repeatDetailMap", repeatDetailMap);
+
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
     glBindTexture(GL_TEXTURE_2D, 0);
+    
+    
+    /*glBindTexture(GL_TEXTURE_2D, textureID);
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
 void BruteForceTerrain::GenerateTerrainFractal_FF(float iMinDelta, float iMaxDelta, int iterations, int size, bool applyFilter, float filterStrength, float heightScale)

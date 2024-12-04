@@ -93,10 +93,15 @@ int main()
 
 
     BruteForceTerrain terrain;
+    terrain.shaderProgramme = &terrainShader;
     //terrain.LoadTexture(RESOURCES_PATH"Grass1/aerial_grass_rock_diff_4k.jpg");
     terrain.LoadtextureTiles(RESOURCES_PATH"TextureTiles/");
+    terrain.LoadDetailMap(RESOURCES_PATH"DetailMap1.jpg");
+    terrain.repeatDetailMap = 1.f;
     //terrain.GenerateTerrainFractal_FF(0, 255, 32, 256,true, 0.1f,0.1f);
-    terrain.GenerateTerrainFractal_MPD(256.0f, 2.0f, 256, 0.1f);
+    // Random seed based on time
+    //srand(static_cast<unsigned int>(time(0)));
+    terrain.GenerateTerrainFractal_MPD(256.0f, 2.0f, 512, 0.15f);
     
     
     // render loop
@@ -161,6 +166,8 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
