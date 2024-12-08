@@ -7,7 +7,12 @@ uniform sampler2D terrainTexture;
 uniform sampler2D detailTexture;
 uniform float repeatDetailMap;
 
+uniform sampler2D lightMapTexture;
+
 void main() {
+    
+    //vec3 lightMap = texture(lightMapTexture, TexCoord).rgb;
+    float lightValue = texture(lightMapTexture, TexCoord).r;
 
     vec4 baseColor = texture(terrainTexture, TexCoord);
     float detailValue = texture(detailTexture, TexCoord * repeatDetailMap).r;
@@ -15,7 +20,7 @@ void main() {
     // Use the detail map to modulate the base texture
     vec4 blendedColor = baseColor * (1.0 + detailValue - 0.5);
 
-    FragColor = blendedColor;
-    
-    
+
+     FragColor = blendedColor;
+     FragColor = vec4(blendedColor.rgb * lightValue, blendedColor.a);
 }

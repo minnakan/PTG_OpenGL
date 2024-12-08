@@ -33,6 +33,10 @@ void BruteForceTerrain::Render(void)
     glBindTexture(GL_TEXTURE_2D, detailMapID);
     shaderProgramme->setInt("detailTexture", 1);
 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, lightMapID);
+    shaderProgramme->setInt("lightMapTexture", 2);
+
     shaderProgramme->setFloat("repeatDetailMap", repeatDetailMap);
 
     glBindVertexArray(VAO);
@@ -53,8 +57,9 @@ void BruteForceTerrain::GenerateTerrainFractal_FF(float iMinDelta, float iMaxDel
 {
     Terrain::SetHeightScale(heightScale);
     //TODO Allow generating rectangles; need width and height instead of just size;
-    if (m_heightData.m_pucData) {
-        //delete[] m_heightData.m_pucData;//TODO: Fix this
+    if (m_heightData.m_iSize >= 0) {
+        delete[] m_heightData.m_pucData;
+        m_heightData.m_iSize = 0;
     }
     m_heightData.m_pucData = new unsigned char[size * size];
     if (!m_heightData.m_pucData) {
@@ -197,8 +202,9 @@ void BruteForceTerrain::GenerateTerrainFractal_FF(float iMinDelta, float iMaxDel
 
 void BruteForceTerrain::GenerateTerrainFractal_MPD(float initialHeight, float roughness, int size, float heightScale)
 {   
-    Terrain::SetHeightScale(heightScale);
+     Terrain::SetHeightScale(heightScale);
     //Giving sizes in powers of 2 is more intuitive
+
     size = size + 1;
     // Verify size is 2^n + 1
     if (((size - 1) & (size - 2)) != 0) {
@@ -207,8 +213,9 @@ void BruteForceTerrain::GenerateTerrainFractal_MPD(float initialHeight, float ro
     }
 
     // Allocate memory for height data
-    if (m_heightData.m_pucData) {
-        //delete[] m_heightData.m_pucData;//TODO: Fix this
+    if (m_heightData.m_iSize >= 0) {
+        delete[] m_heightData.m_pucData;
+        m_heightData.m_iSize = 0;
     }
     m_heightData.m_pucData = new unsigned char[size * size];
     if (!m_heightData.m_pucData) {

@@ -97,13 +97,21 @@ int main()
     //terrain.LoadTexture(RESOURCES_PATH"Grass1/aerial_grass_rock_diff_4k.jpg");
     terrain.LoadtextureTiles(RESOURCES_PATH"TextureTiles/");
     terrain.LoadDetailMap(RESOURCES_PATH"DetailMap1.jpg");
+    //terrain.LoadLightMap(RESOURCES_PATH"Lightmaps/lightmapTest.jpg", 257);
     terrain.repeatDetailMap = 1.f;
     //terrain.GenerateTerrainFractal_FF(0, 255, 32, 256,true, 0.1f,0.1f);
     // Random seed based on time
     //srand(static_cast<unsigned int>(time(0)));
-    terrain.GenerateTerrainFractal_MPD(256.0f, 2.0f, 512, 0.15f);
+    terrain.GenerateTerrainFractal_MPD(256.0f, 1.0f, 256, 0.5f);
+
+    terrain.SetLightingType(SLOPE_LIGHT);
     
+    terrain.CustomizeSlopeLighting(1, 0, 0.1f, 1.0f, 10.0f);
+    terrain.CalculateLighting();
     
+    //terrain.SetLightingType(HEIGHT_BASED); // Switch to height-based lighting
+    //terrain.CalculateLighting();
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
