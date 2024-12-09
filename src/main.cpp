@@ -107,11 +107,11 @@ int main()
     terrain.LoadDetailMap(RESOURCES_PATH"DetailMap1.jpg");
     //terrain.LoadLightMap(RESOURCES_PATH"Lightmaps/lightmapTest.jpg", 257);
     terrain.repeatDetailMap = 1.f;
-    //terrain.GenerateTerrainFractal_FF(0, 255, 32, 256,true, 0.1f,0.1f);
+    terrain.GenerateTerrainFractal_FF(0, 255, 32, 256,true, 0.1f,0.1f);
     // Random seed based on time
     //srand(static_cast<unsigned int>(time(0)));
     //terrain.GenerateTerrainFractal_MPD(256.0f, 1.0f, 256, 0.5f);
-    terrain.GenerateTerrainContinuous(32.0f, 256, 0, 0);
+    //terrain.GenerateTerrainContinuous(32.0f, 256, 0, 0);
 
     terrain.SetLightingType(SLOPE_LIGHT);
     
@@ -123,13 +123,13 @@ int main()
     terrain2.LoadtextureTiles(RESOURCES_PATH"TextureTiles/");
     terrain2.LoadDetailMap(RESOURCES_PATH"DetailMap1.jpg");
     terrain2.repeatDetailMap = 1.f;
-    /*terrain2.StitchTerrainMPD(terrain.GetVertices(),
+    terrain2.StitchTerrainMPD(terrain.GetVertices(),
         terrain.GetIndices(),
         terrain.GetSize(),
         0,
         0.5f,256,1, terrain.GetXOffset(), terrain.GetZOffset());
-    terrain2.SetLightingType(SLOPE_LIGHT);*/
-    terrain2.GenerateTerrainContinuous(32.0f, 256, 1, 0);
+    terrain2.SetLightingType(SLOPE_LIGHT);
+    //terrain2.GenerateTerrainContinuous(32.0f, 256, 1, 0);
 
     terrain2.CustomizeSlopeLighting(1, 0, 0.1f, 1.0f, 10.0f);
     terrain2.CalculateLighting();
@@ -190,8 +190,8 @@ int main()
         terrainManager.Render();
 
 
-        /*terrain.Render();
-        terrain2.Render();*/
+        //terrain.Render();
+        //terrain2.Render();
         //terrain3.Render();
    
 
