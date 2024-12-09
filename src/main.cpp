@@ -108,6 +108,23 @@ int main()
     
     terrain.CustomizeSlopeLighting(1, 0, 0.1f, 1.0f, 10.0f);
     terrain.CalculateLighting();
+
+    BruteForceTerrain terrain2;
+    terrain2.shaderProgramme = &terrainShader;
+    terrain2.LoadtextureTiles(RESOURCES_PATH"TextureTiles/");
+    terrain2.LoadDetailMap(RESOURCES_PATH"DetailMap1.jpg");
+    terrain2.repeatDetailMap = 1.f;
+    terrain2.StitchTerrainMPD(terrain.GetVertices(),
+        terrain.GetIndices(),
+        terrain.GetSize(),
+        0,
+        0.5f,256,1);
+    terrain2.SetLightingType(SLOPE_LIGHT);
+
+    terrain2.CustomizeSlopeLighting(1, 0, 0.1f, 1.0f, 10.0f);
+    terrain2.CalculateLighting();
+
+
     
     //terrain.SetLightingType(HEIGHT_BASED); // Switch to height-based lighting
     //terrain.CalculateLighting();
@@ -146,6 +163,7 @@ int main()
 
 
         terrain.Render();
+        terrain2.Render();
    
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

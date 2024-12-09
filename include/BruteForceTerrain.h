@@ -28,7 +28,21 @@ public:
     //Fractal Terrain Generation using Mid Point displacement
     void GenerateTerrainFractal_MPD(float initialHeight, float roughness, int size, float heightScale = 0.1f);
 
+    void StitchTerrainMPD(const std::vector<float>& sourceVertices, const std::vector<unsigned int>& sourceIndices, int sourceSize, int direction, float heightScale, float initialHeight, float roughness);
+
+    void GenerateIndicesWithBlendZone(int size, int direction, float blendDistance);
+
+    glm::vec3 GetVertexPosition(unsigned int index);
+
+    unsigned int AddVertex(const glm::vec3& position);
+
     bool LoadtextureTiles(const char* TilesPath);
+
+    const std::vector<float>& GetVertices() const { return m_vertices; }
+
+    const std::vector<unsigned int>& GetIndices() const { return m_indices; }
+
+    int GetSize() const { return m_iSize; }
 
 private:
     //FIR(Finite Impulse Response) filter for smoothing
@@ -38,6 +52,8 @@ private:
 
     //Populate Buffers from indices and vertices
     void SetupMesh();
+
+    void SetupTerrainData(int newSize, const std::vector<float>& heightBuffer);
 };
 
 #endif
