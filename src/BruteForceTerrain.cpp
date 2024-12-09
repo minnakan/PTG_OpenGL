@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include "perlin.h"
 
 
 
@@ -358,7 +359,7 @@ void BruteForceTerrain::GenerateTerrainFractal_MPD(float initialHeight, float ro
     SetupMesh();
 }
 
-void BruteForceTerrain::StitchTerrainMPD(const std::vector<float>& sourceVertices, const std::vector<unsigned int>& sourceIndices,int sourceSize, int direction, float heightScale, float initialHeight, float roughness)
+void BruteForceTerrain::StitchTerrainMPD(const std::vector<float>& sourceVertices, const std::vector<unsigned int>& sourceIndices,int sourceSize, int direction, float heightScale, float initialHeight, float roughness, float sourceXOffset,float sourceZOffset)
 {
     Terrain::SetHeightScale(heightScale);
 
@@ -367,13 +368,24 @@ void BruteForceTerrain::StitchTerrainMPD(const std::vector<float>& sourceVertice
         return;
     }
 
-    // Calculate offset based on direction
-    float xOffset = 0, zOffset = 0;
+    // Calculate offset based on direction, including source terrain's offset
     switch (direction) {
-    case 0: xOffset = sourceSize - 1; break;  // Right
-    case 1: zOffset = sourceSize - 1; break;  // Forward
-    case 2: xOffset = -(sourceSize - 1); break;  // Left
-    case 3: zOffset = -(sourceSize - 1); break;  // Back
+    case 0: // Right
+        m_xOffset = sourceXOffset + (sourceSize - 1);
+        m_zOffset = sourceZOffset;
+        break;
+    case 1: // Forward
+        m_xOffset = sourceXOffset;
+        m_zOffset = sourceZOffset + (sourceSize - 1);
+        break;
+    case 2: // Left
+        m_xOffset = sourceXOffset - (sourceSize - 1);
+        m_zOffset = sourceZOffset;
+        break;
+    case 3: // Back
+        m_xOffset = sourceXOffset;
+        m_zOffset = sourceZOffset - (sourceSize - 1);
+        break;
     default:
         std::cerr << "Invalid direction specified" << std::endl;
         return;
@@ -528,8 +540,8 @@ void BruteForceTerrain::StitchTerrainMPD(const std::vector<float>& sourceVertice
 
     for (int z = 0; z < newSize; z++) {
         for (int x = 0; x < newSize; x++) {
-            float globalX = static_cast<float>(x) + xOffset;
-            float globalZ = static_cast<float>(z) + zOffset;
+            float globalX = static_cast<float>(x) + m_xOffset;
+            float globalZ = static_cast<float>(z) + m_zOffset;
 
             float distanceFromEdge;
             int edgeIndex;
@@ -724,13 +736,13 @@ bool BruteForceTerrain::LoadtextureTiles(const char* TilesPath) {
     if (!m_textureGenerator.AddTextureTile((basePath + "Grass.jpg").c_str(), 0, 64)) { 
         return false;
     }
-    if (!m_textureGenerator.AddTextureTile((basePath + "Dirt.jpg").c_str(), 48, 128)) {      
+    if (!m_textureGenerator.AddTextureTile((basePath + "Dirt.jpg").c_str(), 48, 140)) {      
         return false;
     }
-    if (!m_textureGenerator.AddTextureTile((basePath + "BlackRock.jpg").c_str(), 112, 192)) {     
+    if (!m_textureGenerator.AddTextureTile((basePath + "BlackRock.jpg").c_str(), 120, 220)) {     
         return false;
     }
-    if (!m_textureGenerator.AddTextureTile((basePath + "Snow.jpg").c_str(), 176, 255)) { 
+    if (!m_textureGenerator.AddTextureTile((basePath + "Snow.jpg").c_str(), 210, 255)) {
         return false;
     }
 
@@ -826,4 +838,175 @@ void BruteForceTerrain::SetupMesh()
 
     glBindVertexArray(0);
 }
+
+
+void BruteForceTerrain::GenerateTerrainContinuous(float heightScale, int size, int gridX, int gridY, float noiseScale)
+{
+    Terrain::SetHeightScale(heightScale);
+
+    // Store grid position
+    m_xOffset = gridX * (size - 1);
+    m_zOffset = gridY * (size - 1);
+
+    // Setup heightmap buffer
+    if (m_heightData.m_iSize >= 0) {
+        delete[] m_heightData.m_pucData;
+        m_heightData.m_iSize = 0;
+    }
+    m_heightData.m_pucData = new unsigned char[size * size];
+    if (!m_heightData.m_pucData) {
+        std::cerr << "Failed to allocate memory for height data." << std::endl;
+        return;
+    }
+
+    m_iSize = size;
+    std::vector<float> heightBuffer(size * size, 0.0f);
+    std::vector<int> p = get_permutation_vector();
+
+    // Modified noise parameters for smoother terrain
+    const int baseOctaves = 4;          
+    const int mountainOctaves = 10;
+    const float persistence = 0.2f;      
+    const float lacunarity = 5.5f;       
+    const float heightMultiplier = 1.5f; 
+    const float mountainScale = 0.1f;    
+
+    // Calculate total amplitude for normalization
+    float totalAmplitude = 0.0f;
+    float amplitude = 1.0f;
+    for (int i = 0; i < baseOctaves; i++) {
+        totalAmplitude += amplitude;
+        amplitude *= persistence;
+    }
+
+    // Generate height values
+    for (int z = 0; z < size; z++) {
+        for (int x = 0; x < size; x++) {
+            float worldX = static_cast<float>(x + m_xOffset);
+            float worldZ = static_cast<float>(z + m_zOffset);
+
+            // Base terrain - gentle rolling hills
+            float noiseHeight = 0.0f;
+            amplitude = 1.0f;
+            float frequency = 1.0f;
+
+            for (int i = 0; i < baseOctaves; i++) {
+                float sampleX = worldX / (noiseScale / frequency);
+                float sampleZ = worldZ / (noiseScale / frequency);
+
+                float perlinValue = perlin_noise(sampleX, sampleZ, p);
+                noiseHeight += perlinValue * amplitude;
+
+                amplitude *= persistence;
+                frequency *= lacunarity;
+            }
+
+            // Mountain influence - more gradual
+            float mountainNoise = 0.0f;
+            amplitude = mountainScale;
+            frequency = 0.6f;  // Lower initial frequency
+
+            for (int i = 0; i < mountainOctaves; i++) {
+                float sampleX = worldX / ((noiseScale * 1.2f) / frequency);  // Larger scale for mountains
+                float sampleZ = worldZ / ((noiseScale * 1.2f) / frequency);
+
+                float perlinValue = perlin_noise(sampleX, sampleZ, p);
+                // Smoother ridge formation
+                perlinValue = 1.0f - std::abs(perlinValue);
+                perlinValue = std::pow(perlinValue, 1.5f);  // More gradual peaks
+
+                mountainNoise += perlinValue * amplitude;
+
+                amplitude *= persistence;
+                frequency *= lacunarity;
+            }
+
+            // Combine with reduced mountain influence
+            float combinedNoise = (noiseHeight / totalAmplitude + mountainNoise * 0.6f) * heightMultiplier;
+
+            // Softer height transformation
+            float sign = combinedNoise > 0 ? 1.0f : -1.0f;
+            combinedNoise = sign * std::pow(std::abs(combinedNoise), 2.f);  // Reduced power for smoother slopes
+
+            heightBuffer[z * size + x] = combinedNoise;
+        }
+    }
+
+    // Additional smoothing pass
+    std::vector<float> smoothedBuffer = heightBuffer;
+    const int smoothRadius = 2;
+    for (int z = smoothRadius; z < size - smoothRadius; z++) {
+        for (int x = smoothRadius; x < size - smoothRadius; x++) {
+            float sum = 0.0f;
+            int count = 0;
+
+            // Average with neighbors
+            for (int dz = -smoothRadius; dz <= smoothRadius; dz++) {
+                for (int dx = -smoothRadius; dx <= smoothRadius; dx++) {
+                    sum += heightBuffer[(z + dz) * size + (x + dx)];
+                    count++;
+                }
+            }
+            smoothedBuffer[z * size + x] = sum / count;
+        }
+    }
+    heightBuffer = smoothedBuffer;
+
+    // Generate mesh with smoother height transitions
+    m_vertices.clear();
+    m_indices.clear();
+    m_vertices.reserve(size * size * 8);
+
+    // Create vertices with gradual height changes
+    for (int z = 0; z < size; z++) {
+        for (int x = 0; x < size; x++) {
+            float normalizedHeight = (heightBuffer[z * size + x] + 1.0f) * 0.5f;
+            float finalHeight = normalizedHeight * heightScale;
+
+            m_heightData.m_pucData[z * size + x] = static_cast<unsigned char>(normalizedHeight * 255.0f);
+
+            float worldX = static_cast<float>(x + m_xOffset);
+            float worldZ = static_cast<float>(z + m_zOffset);
+
+            m_vertices.push_back(worldX);
+            m_vertices.push_back(finalHeight);
+            m_vertices.push_back(worldZ);
+
+            m_vertices.push_back(0.0f);
+            m_vertices.push_back(1.0f);
+            m_vertices.push_back(0.0f);
+
+            m_vertices.push_back(static_cast<float>(x) / (size - 1));
+            m_vertices.push_back(static_cast<float>(z) / (size - 1));
+        }
+    }
+
+    // Generate indices
+    for (int z = 0; z < size - 1; z++) {
+        for (int x = 0; x < size - 1; x++) {
+            unsigned int topLeft = z * size + x;
+            unsigned int topRight = topLeft + 1;
+            unsigned int bottomLeft = (z + 1) * size + x;
+            unsigned int bottomRight = bottomLeft + 1;
+
+            m_indices.push_back(topLeft);
+            m_indices.push_back(bottomLeft);
+            m_indices.push_back(topRight);
+
+            m_indices.push_back(topRight);
+            m_indices.push_back(bottomLeft);
+            m_indices.push_back(bottomRight);
+        }
+    }
+
+    CalculateNormals(m_vertices, m_indices);
+
+    if (textureID) {
+        glDeleteTextures(1, &textureID);
+    }
+    textureID = m_textureGenerator.GenerateTexture(m_heightData.m_pucData, m_iSize, 256);
+
+    SetupMesh();
+}
+
 

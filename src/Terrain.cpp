@@ -232,7 +232,7 @@ void Terrain::CalculateLighting() {
     glGenerateMipmap(GL_TEXTURE_2D);
 
 
-    SaveLightMap("lightmapTest.jpg");
+    //SaveLightMap("lightmapTest.jpg");
 }
 
 bool Terrain::SaveLightMap(const char* filename) const {

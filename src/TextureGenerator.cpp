@@ -1,6 +1,7 @@
 // TextureGenerator.cpp
 #include "TextureGenerator.h"
 #include "stb_image/stb_image.h"
+#include "stb_image/stb_image_write.h"
 #include <iostream>
 
 TextureGenerator::TextureGenerator() {}
@@ -159,6 +160,8 @@ unsigned int TextureGenerator::GenerateTexture(const unsigned char* heightData, 
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, targetSize, targetSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, finalTexture.data());
     glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_write_png("debug_texture.png", targetSize, targetSize, 4, finalTexture.data(), targetSize * 4);
 
     return textureID;
 }

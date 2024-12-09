@@ -6,6 +6,7 @@
 #include "TextureGenerator.h"
 
 
+
 class BruteForceTerrain : public Terrain
 {
 private:
@@ -14,6 +15,9 @@ private:
     std::vector<unsigned int> m_indices;
 
     TextureGenerator m_textureGenerator;
+
+    float m_xOffset = 0.0f;  // Track current terrain offset
+    float m_zOffset = 0.0f;
     
 
 public:
@@ -28,7 +32,9 @@ public:
     //Fractal Terrain Generation using Mid Point displacement
     void GenerateTerrainFractal_MPD(float initialHeight, float roughness, int size, float heightScale = 0.1f);
 
-    void StitchTerrainMPD(const std::vector<float>& sourceVertices, const std::vector<unsigned int>& sourceIndices, int sourceSize, int direction, float heightScale, float initialHeight, float roughness);
+    void StitchTerrainMPD(const std::vector<float>& sourceVertices, const std::vector<unsigned int>& sourceIndices, int sourceSize, int direction, float heightScale, float initialHeight, float roughness, float sourceXOffset = 0.0f, float sourceZOffset = 0.0f);
+
+    void GenerateTerrainContinuous(float heightScale, int size, int gridX, int gridY, float noiseScale = 94.0f);
 
     void GenerateIndicesWithBlendZone(int size, int direction, float blendDistance);
 
@@ -41,6 +47,9 @@ public:
     const std::vector<float>& GetVertices() const { return m_vertices; }
 
     const std::vector<unsigned int>& GetIndices() const { return m_indices; }
+
+    float GetXOffset() const { return m_xOffset; }
+    float GetZOffset() const { return m_zOffset; }
 
     int GetSize() const { return m_iSize; }
 
